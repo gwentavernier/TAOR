@@ -1,0 +1,186 @@
+model Tutor_allocation
+  uses "mmxprs"
+
+   declarations
+    Workshops = 1..21
+    Discipline_name: set of string
+    Course_code: set of string
+    Days_of_the_week= 1..5
+    Term_Weeks= 1..11
+    CourseIDWorkshops: array(Workshops) of string
+    Tutor= 1..100
+    Days_of_the_week2 = 1..10
+    Disciplines: array(Workshops, Discipline_name) of integer
+    Difficulty: array(Workshops) of integer
+    Week: array(Workshops, Term_Weeks) of integer
+    StartEnd: array(Workshops, Days_of_the_week2) of real
+    Min_tutors: array(Course_code) of integer
+    Work_minimum=2
+    Work_maximum=10
+
+    Allocate: array(Tutor, Workshops) of mpvar
+    workload: array(Tutor) of mpvar
+  end-declarations
+
+  initialisations from "Courses_data 7.dat"
+    Discipline_name
+    CourseIDWorkshops
+    Course_code
+    Disciplines
+    Difficulty
+    StartEnd
+    Week
+    Min_tutors
+  end-initialisations
+
+  declarations
+    Preference: array(Tutor, Discipline_name) of integer
+  end-declarations
+
+  initialisations from "TutorPref (2).dat"
+    Preference
+  end-initialisations
+
+  declarations
+    Self_Competency: array(Tutor, Discipline_name) of integer
+  end-declarations
+
+  initialisations from "TutorComp (3).dat"
+    Self_Competency
+  end-initialisations
+
+  forall(t in Tutor, i in Workshops) Allocate(t,i) is_binary
+
+
+  forall(t in Tutor, d in Discipline_name) do
+      AllocatedDisciplines(t, d) := sum(i in Workshops)Allocate(t, i)*Disciplines(i,d);
+      end-do
+
+  forall(t in Tutor) do
+    TutorSatisfaction(t) := sum(d in Discipline_name) Preference(t, d)*AllocatedDisciplines(t, d);
+  end-do
+
+  Satisfaction := sum(t in Tutor) TutorSatisfaction(t)
+  
+  forall(g in Course_code) do
+    forall(t in Tutor) do
+      TutorCourseTotal(t, g) := sum(i in Workshops| g=CourseIDWorkshops(i)) Allocate(t,i)
+      end-do
+    TutorTotal(g) := sum(t in Tutor) TutorCourseTotal(t, g)
+    TutorTotal(g) >= Min_tutors(g);
+  end-do
+  
+  forall(i in Workshops) do
+    WorkshopTotal(i) := sum(t in Tutor) Allocate(t, i);
+    WorkshopTotal(i) >= 1;
+    end-do
+
+  forall(t in Tutor, i in Workshops) do
+    !Tutor competency constraint
+    forall(d in Discipline_name) do
+      if Disciplines(i, d) * Difficulty(i) <= Self_Competency(t, d) then
+        Competency(t, i) := 1
+      else
+        Competency(t, i) := 0
+      end-if
+    end-do
+    Allocate(t, i) <= Competency(t,i)
+  end-do
+
+  ! Workload constraint
+  forall(t in Tutor) do
+      workload(t) = sum(i in Workshops, w in Days_of_the_week) (StartEnd(i, 2*w)-StartEnd(i, 2*w-1))*Allocate(t, i);
+      workload(t) >= Work_minimum;
+      workload(t) <= Work_maximum;
+  end-do
+  
+  forall(i in Workshops, j in Workshops) do
+  Available_week(i,j):= 0
+  end-do
+  
+  forall(i in Workshops, j in Workshops) do
+  Available(i,j):= 0
+  end-do
+  
+  forall(i in Workshops) do
+    forall(j in Workshops) do
+      if i=j then
+      Available_week(i, j) += 1
+      Available_week(j, i) += 1
+      else
+      forall(w in Term_Weeks) do
+          if Week(i,w)+Week(j,w)>1 then
+            Available_week(i, j) -= 100000
+            Available_week(j, i) -= 100000
+          end-if
+          if  Week(i,w)+Week(j,w)<=1 then
+          Available_week(i,j)+=1
+          Available_week(j,i)+=1
+          end-if
+      end-do
+      end-if
+    end-do
+  end-do
+  
+  forall(a in Workshops, b in Workshops) do
+    if Available_week(a,b)<0 then
+      Available_week(a,b) :=0;
+    elif Available_week(a,b)>0 then
+      Available_week(a,b) :=1;
+    end-if
+  end-do
+  
+  forall(f in Workshops, g in Workshops) do
+  if Available_week(f,g) = 1 then
+  forall(i in Workshops) do
+    forall(j in Workshops) do
+      if i=j then
+      Available(i, j) += 1
+      Available(j, i) += 1
+      else
+      forall(w in Days_of_the_week) do
+          if (StartEnd(i, 2*w-1) > 0 and StartEnd(j, 2*w-1) > 0) then
+              if not (StartEnd(i, 2*w) <= StartEnd(j, 2*w-1) or StartEnd(j, 2*w) <= StartEnd(i, 2*w-1)) then
+                  Available(i, j) -= 100000
+                  Available(j, i) -= 100000
+              end-if
+          elif (StartEnd(i, 2*w-1) < 0 and StartEnd(j, 2*w-1) < 0) then
+              if not (StartEnd(j, 2*w) <= StartEnd(i, 2*w-1) or StartEnd(i, 2*w) <= StartEnd(j, 2*w-1)) then
+                  Available(i, j) -= 100000
+                  Available(j, i) -= 100000
+              end-if
+          end-if
+          if (StartEnd(i, 2*w-1) = 0 and StartEnd(j, 2*w-1) = 0) then
+          Available(i,j)+=1
+          Available(j,i)+=1
+          end-if
+      end-do
+      end-if
+    end-do
+  end-do
+  end-if
+  end-do
+  
+  forall(a in Workshops, b in Workshops) do
+    if Available(a,b)<0 then
+      Available (a,b) :=0;
+    elif Available(a,b)>0 then
+      Available(a,b) :=1;
+    end-if
+  end-do
+  
+  !Busy constraint
+  forall(t in Tutor,c in Workshops)do
+    forall(i in Workshops)do
+      if Available(c,i) = 0 then
+        Allocate(t,i)+Allocate(t,c) <= 1
+        end-if
+      end-do
+    end-do
+  
+  minimise(Satisfaction);
+
+  writeln(getsol(Satisfaction))
+  writeln("End running model");
+  
+end-model
