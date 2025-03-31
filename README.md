@@ -17,8 +17,8 @@ StartEnd.csv: Contains the information on the start and end time and day of the 
 
 Courses-data.ipynb: Python code to extract the necessary information from the university's DRPS site, and produce the Courses_data.dat file.
 
-courses_data.csv: The extracted courses data in csv form with the disicplines that make up each course, their difficulty, .
+courses_data.csv: The extracted courses information in csv form.
 
-Days_tutor.csv: The extracted courses data in csv form with the workshop timetable.
+Days_tutor.csv: The extracted workshop timetable in csv form.
 
 GenerateTutorData.ipynb: Python code to create the necessary dat files: TutorComp.dat and TutorPref.dat
