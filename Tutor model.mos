@@ -8,7 +8,7 @@ model Tutor_allocation
     Days_of_the_week= 1..5
     Term_Weeks= 1..11
     CourseIDWorkshops: array(Workshops) of string
-    Tutor= 1..100
+    Tutor= 1..60
     Days_of_the_week2 = 1..10
     Disciplines: array(Workshops, Discipline_name) of integer
     Difficulty: array(Workshops) of integer
@@ -22,7 +22,7 @@ model Tutor_allocation
     workload: array(Tutor) of mpvar
   end-declarations
 
-  initialisations from "Courses_data 7.dat"
+  initialisations from "Courses_data.dat"
     Discipline_name
     CourseIDWorkshops
     Course_code
@@ -37,7 +37,7 @@ model Tutor_allocation
     Preference: array(Tutor, Discipline_name) of integer
   end-declarations
 
-  initialisations from "TutorPref (2).dat"
+  initialisations from "TutorPref.dat"
     Preference
   end-initialisations
 
@@ -45,7 +45,7 @@ model Tutor_allocation
     Self_Competency: array(Tutor, Discipline_name) of integer
   end-declarations
 
-  initialisations from "TutorComp (3).dat"
+  initialisations from "TutorComp.dat"
     Self_Competency
   end-initialisations
 
