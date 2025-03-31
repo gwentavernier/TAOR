@@ -15,7 +15,7 @@ StartEnd.csv: Contains the information on the start and end time and day of the 
 
 ***Data extraction and generation:***
 
-Courses-data.ipynb: Python code to extract the necessary information from the university's DRPS site, and produce the Courses_data.dat file.
+Courses-data.ipynb: Python code to extract the necessary information from the university's PATH site, and produce the Courses_data.dat file.
 
 courses_data.csv: The extracted courses information in csv form.
 
